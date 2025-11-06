@@ -1,6 +1,4 @@
-/**
- * Canvas Manager - FIXED FOR UNDO/REDO
- */
+
 
 class CanvasManager {
   constructor(canvasId) {

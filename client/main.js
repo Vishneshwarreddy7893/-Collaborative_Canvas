@@ -1,6 +1,4 @@
-/**
- * Main Application - FIXED UNDO/REDO
- */
+
 
 console.log('[Main] Main.js loaded');
 
@@ -47,7 +45,7 @@ class CollaborativeCanvasApp {
     const roomIdInput = document.getElementById('roomId');
     
     if (!modal || !joinBtn) {
-      console.error('[Main] ❌ Modal elements not found!');
+      console.error('[Main] Modal elements not found!');
       return;
     }
     
@@ -55,7 +53,7 @@ class CollaborativeCanvasApp {
     modal.classList.remove('hidden');
     
     joinBtn.onclick = () => {
-      console.log('[Main] 🔘 JOIN BUTTON CLICKED!');
+      console.log('[Main] JOIN BUTTON CLICKED!');
       this.handleJoinRoom(userNameInput.value.trim(), roomIdInput.value.trim(), modal, joinBtn);
     };
     
@@ -80,7 +78,7 @@ class CollaborativeCanvasApp {
     userName = userName || 'Anonymous';
     roomId = roomId || 'default';
     
-    console.log('[Main] 🚪 handleJoinRoom called');
+    console.log('[Main] handleJoinRoom called');
     console.log('[Main] Name:', userName, 'Room:', roomId);
     
     joinBtn.disabled = true;
@@ -92,7 +90,7 @@ class CollaborativeCanvasApp {
     let connected = false;
     const timeout = setTimeout(() => {
       if (!connected) {
-        console.error('[Main] ⏱️ CONNECTION TIMEOUT');
+        console.error('[Main] CONNECTION TIMEOUT');
         alert('Connection timeout. Is the server running?');
         joinBtn.disabled = false;
         joinBtn.textContent = 'Join Room';
@@ -104,7 +102,7 @@ class CollaborativeCanvasApp {
       connected = true;
       clearTimeout(timeout);
       
-      console.log('[Main] ✅ Connected callback triggered');
+      console.log('[Main] Connected callback triggered');
       console.log('[Main] Calling joinRoom()');
       
       const success = window.wsClient.joinRoom(roomId, userName);
@@ -112,7 +110,7 @@ class CollaborativeCanvasApp {
       
       if (success) {
         setTimeout(() => {
-          console.log('[Main] ✅ Hiding modal');
+          console.log('[Main] Hiding modal');
           modal.classList.add('hidden');
           joinBtn.disabled = false;
           joinBtn.textContent = 'Join Room';
@@ -194,7 +192,7 @@ class CollaborativeCanvasApp {
     
     // Initial canvas state when joining
     window.wsClient.on('initCanvas', (data) => {
-      console.log('[Main] 📊 initCanvas callback:', data);
+      console.log('[Main] initCanvas callback:', data);
       this.operations = data.operations || [];
       this.currentOperationIndex = this.operations.length - 1;
       window.canvasManager.replayOperations(this.operations);

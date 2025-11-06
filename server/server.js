@@ -248,14 +248,12 @@ io.on('connection', (socket) => {
 // Start server
 server.listen(PORT, () => {
   console.log(`
-╔════════════════════════════════════════════════════════╗
-║  🎨 Collaborative Canvas Server                        ║
-║                                                        ║
-║  📡 Port: ${PORT}                                        ║
-║  🌐 URL: http://localhost:${PORT}                       ║
-║  📊 Stats: http://localhost:${PORT}/api/stats          ║
-║                                                        ║
-║  ✅ Server is ready!                                   ║
-╚════════════════════════════════════════════════════════╝
+                      
+                                                    
+Port: ${PORT}                                        
+URL: http://localhost:${PORT}                       
+Stats: http://localhost:${PORT}/api/stats                                                               
+Server is ready!                                   
+
   `);
 });

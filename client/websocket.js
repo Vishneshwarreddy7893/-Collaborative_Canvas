@@ -1,6 +1,4 @@
-/**
- * WebSocket Client - COMPLETE FIX
- */
+
 
 class WebSocketClient {
   constructor() {
@@ -35,7 +33,7 @@ class WebSocketClient {
 
   setupEvents() {
     this.socket.on('connect', () => {
-      console.log('[WS] ✅ CONNECTED! ID:', this.socket.id);
+      console.log('[WS] CONNECTED! ID:', this.socket.id);
       this.isConnected = true;
       this.updateStatus(true);
       if (this.callbacks.connect) {
@@ -44,7 +42,7 @@ class WebSocketClient {
     });
 
     this.socket.on('disconnect', () => {
-      console.log('[WS] ❌ Disconnected');
+      console.log('[WS] Disconnected');
       this.isConnected = false;
       this.updateStatus(false);
     });
@@ -54,7 +52,7 @@ class WebSocketClient {
     });
 
     this.socket.on('init-canvas', (data) => {
-      console.log('[WS] 📊 init-canvas received');
+      console.log('[WS]  init-canvas received');
       this.userId = data.yourId;
       this.userColor = data.yourColor;
       if (this.callbacks.initCanvas) {
@@ -75,14 +73,14 @@ class WebSocketClient {
     });
 
     this.socket.on('undo', (data) => {
-      console.log('[WS] ⏪ UNDO event received');
+      console.log('[WS] UNDO event received');
       if (this.callbacks.undo) {
         this.callbacks.undo.forEach(cb => cb(data));
       }
     });
 
     this.socket.on('redo', (data) => {
-      console.log('[WS] ⏩ REDO event received');
+      console.log('[WS]  REDO event received');
       if (this.callbacks.redo) {
         this.callbacks.redo.forEach(cb => cb(data));
       }
@@ -102,7 +100,7 @@ class WebSocketClient {
     });
 
     this.socket.on('user-left', (data) => {
-      console.log('[WS] 👋 User left');
+      console.log('[WS]  User left');
       if (this.callbacks.userLeft) {
         this.callbacks.userLeft.forEach(cb => cb(data));
       }
@@ -121,7 +119,7 @@ class WebSocketClient {
       return false;
     }
 
-    console.log('[WS] 🚪 Joining room:', roomId, 'as', userName);
+    console.log('[WS] Joining room:', roomId, 'as', userName);
     this.socket.emit('join-room', { roomId, userName });
     return true;
   }
@@ -140,7 +138,7 @@ class WebSocketClient {
 
   undo() {
     if (this.isConnected) {
-      console.log('[WS] 🔴 Sending UNDO');
+      console.log('[WS] Sending UNDO');
       this.socket.emit('undo');
     } else {
       console.error('[WS] Cannot undo - not connected');
@@ -149,7 +147,7 @@ class WebSocketClient {
 
   redo() {
     if (this.isConnected) {
-      console.log('[WS] 🔴 Sending REDO');
+      console.log('[WS] Sending REDO');
       this.socket.emit('redo');
     } else {
       console.error('[WS] Cannot redo - not connected');
