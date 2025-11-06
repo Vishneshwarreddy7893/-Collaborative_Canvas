@@ -1,6 +1,3 @@
-/**
- * Main Server - Express + Socket.io
- */
 
 require('dotenv').config();
 const express = require('express');
@@ -46,7 +43,7 @@ let colorIndex = 0;
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
-  console.log(`\n[Connection] ✅ New connection: ${socket.id}`);
+  console.log(`\n[Connection] New connection: ${socket.id}`);
   
   const userColor = USER_COLORS[colorIndex % USER_COLORS.length];
   colorIndex++;
@@ -65,7 +62,7 @@ io.on('connection', (socket) => {
       color: userColor
     });
 
-    console.log(`[Join] ✅ Sending init-canvas to ${socket.id}`);
+    console.log(`[Join] Sending init-canvas to ${socket.id}`);
     console.log(`[Join] Operations: ${result.currentState.length}, Users: ${result.users.length}`);
 
     // Send to the new user
@@ -83,7 +80,7 @@ io.on('connection', (socket) => {
       color: userColor
     });
 
-    console.log(`[Join] ✅ ${userName} successfully joined ${roomId}`);
+    console.log(`[Join]  ${userName} successfully joined ${roomId}`);
   });
 
   // Draw event
@@ -145,7 +142,7 @@ io.on('connection', (socket) => {
 
   // Disconnect
   socket.on('disconnect', () => {
-    console.log(`[Disconnect] ❌ ${socket.id} disconnected`);
+    console.log(`[Disconnect] ${socket.id} disconnected`);
     
     const result = roomManager.removeUser(socket.id);
     if (result.success) {
@@ -160,14 +157,11 @@ io.on('connection', (socket) => {
 // Start server
 server.listen(PORT, () => {
   console.log(`
-╔════════════════════════════════════════════════════════╗
-║  🎨 Collaborative Canvas Server                        ║
-║                                                        ║
-║  📡 Port: ${PORT}                                        ║
-║  🌐 URL: http://localhost:${PORT}                       ║
-║  📊 Stats: http://localhost:${PORT}/api/stats          ║
-║                                                        ║
-║  ✅ Server is ready!                                   ║
-╚════════════════════════════════════════════════════════╝
+
+                                                       
+ Port: ${PORT}                                        
+ URL: http://localhost:${PORT}                       
+ Stats: http://localhost:${PORT}/api/stats          
+ Server is ready!                                   
   `);
 });

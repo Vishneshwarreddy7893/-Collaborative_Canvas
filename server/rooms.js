@@ -1,6 +1,4 @@
-/**
- * Room Manager
- */
+
 
 const DrawingState = require('./drawing-state');
 

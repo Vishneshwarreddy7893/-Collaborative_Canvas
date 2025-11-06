@@ -1,7 +1,4 @@
-/**
- * Main Application
- * THIS IS THE KEY FILE - HANDLES JOIN BUTTON
- */
+
 
 console.log('[Main] Main.js loaded');
 
@@ -50,7 +47,7 @@ class CollaborativeCanvasApp {
     const roomIdInput = document.getElementById('roomId');
     
     if (!modal || !joinBtn) {
-      console.error('[Main] ❌ Modal elements not found!');
+      console.error('[Main]  Modal elements not found!');
       return;
     }
     

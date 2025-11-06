@@ -1,7 +1,4 @@
-/**
- * Drawing State Manager
- * Manages canvas state and operation history
- */
+
 
 class DrawingState {
   constructor(roomId) {

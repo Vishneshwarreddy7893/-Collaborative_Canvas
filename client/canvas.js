@@ -1,6 +1,4 @@
-/**
- * Canvas Manager
- */
+
 
 class CanvasManager {
   constructor(canvasId) {

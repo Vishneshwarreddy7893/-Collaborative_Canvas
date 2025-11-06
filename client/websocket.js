@@ -1,6 +1,4 @@
-/**
- * WebSocket Client
- */
+
 
 class WebSocketClient {
   constructor() {
@@ -35,7 +33,7 @@ class WebSocketClient {
 
   setupEvents() {
     this.socket.on('connect', () => {
-      console.log('[WS] ✅ CONNECTED! ID:', this.socket.id);
+      console.log('[WS] CONNECTED! ID:', this.socket.id);
       this.isConnected = true;
       this.updateStatus(true);
       if (this.callbacks.connect) {
@@ -44,7 +42,7 @@ class WebSocketClient {
     });
 
     this.socket.on('disconnect', () => {
-      console.log('[WS] ❌ Disconnected');
+      console.log('[WS] Disconnected');
       this.isConnected = false;
       this.updateStatus(false);
     });
