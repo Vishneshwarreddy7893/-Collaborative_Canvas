@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Canvas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>🎨 Collaborative Canvas</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="tools-section">
+                <h3>🛠️ Tools</h3>
+                
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="brush">
+                        <span>✏️</span>
+                        <span>Brush</span>
+                    </button>
+                    <button class="tool-btn" data-tool="eraser">
+                        <span>🧹</span>
+                        <span>Eraser</span>
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <label for="colorPicker">Color</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="colorPicker" value="#000000">
+                        <div class="color-presets">
+                            <button class="color-preset" data-color="#000000" style="background: #000000"></button>
+                            <button class="color-preset" data-color="#FF0000" style="background: #FF0000"></button>
+                            <button class="color-preset" data-color="#00FF00" style="background: #00FF00"></button>
+                            <button class="color-preset" data-color="#0000FF" style="background: #0000FF"></button>
+                            <button class="color-preset" data-color="#FFFF00" style="background: #FFFF00"></button>
+                            <button class="color-preset" data-color="#FF00FF" style="background: #FF00FF"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="brushSize">Size: <span id="brushSizeValue">5</span>px</label>
+                    <input type="range" id="brushSize" min="1" max="50" value="5">
+                </div>
+
+                <div class="action-buttons">
+                    <button id="undoBtn" class="action-btn">
+                        <span>↶</span> Undo
+                    </button>
+                    <button id="redoBtn" class="action-btn">
+                        <span>↷</span> Redo
+                    </button>
+                    <button id="clearBtn" class="action-btn danger">
+                        <span>🗑️</span> Clear
+                    </button>
+                </div>
+            </div>
+
+            <div class="users-section">
+                <h3>👥 Online (<span id="userCount">0</span>)</h3>
+                <div id="usersList" class="users-list"></div>
+            </div>
+
+            <div class="stats-section">
+                <h3>📊 Stats</h3>
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <span>FPS:</span>
+                        <span id="fpsCounter">60</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Latency:</span>
+                        <span id="latencyCounter">0ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Operations:</span>
+                        <span id="operationCounter">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Canvas -->
+        <main class="canvas-container">
+            <div class="canvas-wrapper">
+                <canvas id="drawingCanvas"></canvas>
+                <div id="cursorsContainer" class="cursors-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Join Modal -->
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <h2>🎨 Join Drawing Room</h2>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label for="userName">Your Name</label>
+                    <input type="text" id="userName" placeholder="Enter your name" maxlength="20" value="User1">
+                </div>
+                <div class="form-group">
+                    <label for="roomId">Room ID (optional)</label>
+                    <input type="text" id="roomId" placeholder="default" maxlength="20" value="default">
+                </div>
+                <button id="joinBtn" class="primary-btn">Join Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="websocket.js"></script>
+    <script src="canvas.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
