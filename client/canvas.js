@@ -1,4 +1,6 @@
-
+/**
+ * Canvas Manager - FIXED FOR UNDO/REDO
+ */
 
 class CanvasManager {
   constructor(canvasId) {
@@ -124,7 +126,7 @@ class CanvasManager {
     if (!window.wsClient || !window.wsClient.isConnected) return;
     
     const data = {
-      points: this.currentStroke.points.slice(-3),
+      points: this.currentStroke.points.slice(),
       color: this.currentStroke.color,
       size: this.currentStroke.size,
       tool: this.currentStroke.tool
@@ -152,26 +154,60 @@ class CanvasManager {
     this.ctx.restore();
   }
 
+  // FIXED: Better stroke drawing
   drawStroke(strokeData) {
-    if (!strokeData.points || strokeData.points.length < 2) return;
+    if (!strokeData || !strokeData.points || strokeData.points.length === 0) {
+      console.warn('[Canvas] Invalid stroke data:', strokeData);
+      return;
+    }
     
     const points = strokeData.points;
+    
+    // If only one point, draw a dot
+    if (points.length === 1) {
+      this.ctx.save();
+      
+      if (strokeData.tool === 'eraser') {
+        this.ctx.globalCompositeOperation = 'destination-out';
+        this.ctx.fillStyle = 'rgba(0,0,0,1)';
+      } else {
+        this.ctx.globalCompositeOperation = 'source-over';
+        this.ctx.fillStyle = strokeData.color;
+      }
+      
+      this.ctx.beginPath();
+      this.ctx.arc(points[0].x, points[0].y, strokeData.size / 2, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.restore();
+      return;
+    }
+    
+    // Draw lines between points
     for (let i = 1; i < points.length; i++) {
       this.drawLine(points[i - 1], points[i], strokeData.color, strokeData.size, strokeData.tool);
     }
   }
 
+  // FIXED: Clear canvas before replaying
   replayOperations(operations) {
+    console.log('[Canvas] Replaying', operations.length, 'operations');
+    
+    // Clear canvas
     this.ctx.fillStyle = 'white';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    operations.forEach(op => {
-      if (op.type === 'draw') {
+    
+    // Replay all operations
+    operations.forEach((op, index) => {
+      if (op.type === 'draw' || op.points) {
         this.drawStroke(op);
       }
     });
+    
+    console.log('[Canvas] Replay complete');
   }
 
   clearCanvas() {
+    console.log('[Canvas] Clearing canvas');
     this.ctx.fillStyle = 'white';
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.operationCount = 0;
@@ -189,8 +225,12 @@ class CanvasManager {
       this.cursors.set(userId, cursorElement);
     }
     
-    cursorElement.style.left = `${position.x}px`;
-    cursorElement.style.top = `${position.y}px`;
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = rect.width / this.canvas.width;
+    const scaleY = rect.height / this.canvas.height;
+    
+    cursorElement.style.left = `${position.x * scaleX}px`;
+    cursorElement.style.top = `${position.y * scaleY}px`;
   }
 
   removeCursor(userId) {
@@ -230,7 +270,7 @@ class CanvasManager {
   }
 }
 
-// FIX: Attach to window object for global access
+// Attach to window object for global access
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.canvasManager = new CanvasManager('drawingCanvas');

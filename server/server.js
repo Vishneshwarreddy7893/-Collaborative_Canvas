@@ -1,3 +1,7 @@
+/**
+ * Main Server - Express + Socket.io
+ * FIXED FOR SMOOTH DRAWING
+ */
 
 require('dotenv').config();
 const express = require('express');
@@ -41,9 +45,12 @@ const USER_COLORS = [
 
 let colorIndex = 0;
 
+// Track ongoing strokes for each user
+const ongoingStrokes = new Map();
+
 // Socket.io connection handler
 io.on('connection', (socket) => {
-  console.log(`\n[Connection] New connection: ${socket.id}`);
+  console.log(`\n[Connection] ✅ New connection: ${socket.id}`);
   
   const userColor = USER_COLORS[colorIndex % USER_COLORS.length];
   colorIndex++;
@@ -62,7 +69,7 @@ io.on('connection', (socket) => {
       color: userColor
     });
 
-    console.log(`[Join] Sending init-canvas to ${socket.id}`);
+    console.log(`[Join] ✅ Sending init-canvas to ${socket.id}`);
     console.log(`[Join] Operations: ${result.currentState.length}, Users: ${result.users.length}`);
 
     // Send to the new user
@@ -80,21 +87,89 @@ io.on('connection', (socket) => {
       color: userColor
     });
 
-    console.log(`[Join]  ${userName} successfully joined ${roomId}`);
+    console.log(`[Join] ✅ ${userName} successfully joined ${roomId}`);
   });
 
-  // Draw event
+  // FIXED: Handle drawing with stroke accumulation
   socket.on('draw', (data) => {
     const room = roomManager.getUserRoom(socket.id);
     if (!room) return;
 
-    const operation = room.addOperation({
+    // Get or create ongoing stroke for this user
+    let strokeKey = `${socket.id}_current`;
+    let ongoingStroke = ongoingStrokes.get(strokeKey);
+
+    if (!ongoingStroke) {
+      // Start new stroke
+      ongoingStroke = {
+        type: 'draw',
+        userId: socket.id,
+        points: [],
+        color: data.color,
+        size: data.size,
+        tool: data.tool,
+        timestamp: Date.now()
+      };
+      ongoingStrokes.set(strokeKey, ongoingStroke);
+      console.log(`[Draw] Started new stroke for ${socket.id}`);
+    }
+
+    // Add new points to ongoing stroke
+    ongoingStroke.points.push(...data.points);
+
+    console.log(`[Draw] Added ${data.points.length} points. Total: ${ongoingStroke.points.length}`);
+
+    // Broadcast the new points to other users
+    socket.to(room.roomId).emit('draw', {
       type: 'draw',
       userId: socket.id,
-      ...data
+      points: data.points, // Only send new points
+      color: data.color,
+      size: data.size,
+      tool: data.tool
     });
 
-    io.to(room.roomId).emit('draw', operation);
+    // If stroke is complete, save it as an operation
+    if (data.isComplete !== false) {
+      // Stroke finished, save to operations
+      const operation = room.addOperation({
+        type: 'draw',
+        userId: socket.id,
+        points: ongoingStroke.points, // Full stroke
+        color: ongoingStroke.color,
+        size: ongoingStroke.size,
+        tool: ongoingStroke.tool
+      });
+
+      console.log(`[Draw] ✅ Stroke complete. Saved ${ongoingStroke.points.length} points as operation`);
+
+      // Clear ongoing stroke
+      ongoingStrokes.delete(strokeKey);
+    }
+  });
+
+  // Clean up ongoing stroke on mouse up (backup)
+  socket.on('stroke-complete', () => {
+    const room = roomManager.getUserRoom(socket.id);
+    if (!room) return;
+
+    let strokeKey = `${socket.id}_current`;
+    let ongoingStroke = ongoingStrokes.get(strokeKey);
+
+    if (ongoingStroke) {
+      // Save as operation
+      room.addOperation({
+        type: 'draw',
+        userId: socket.id,
+        points: ongoingStroke.points,
+        color: ongoingStroke.color,
+        size: ongoingStroke.size,
+        tool: ongoingStroke.tool
+      });
+
+      console.log(`[Draw] ✅ Stroke complete signal. Saved ${ongoingStroke.points.length} points`);
+      ongoingStrokes.delete(strokeKey);
+    }
   });
 
   // Cursor move
@@ -116,6 +191,7 @@ io.on('connection', (socket) => {
 
     const result = room.undo();
     if (result) {
+      console.log(`[Undo] Broadcasting undo. New index: ${result.newIndex}`);
       io.to(room.roomId).emit('undo', result);
     }
   });
@@ -127,6 +203,7 @@ io.on('connection', (socket) => {
 
     const result = room.redo();
     if (result) {
+      console.log(`[Redo] Broadcasting redo. New index: ${result.newIndex}`);
       io.to(room.roomId).emit('redo', result);
     }
   });
@@ -138,11 +215,25 @@ io.on('connection', (socket) => {
 
     room.clear();
     io.to(room.roomId).emit('clear-canvas');
+    
+    // Clear any ongoing strokes for this room
+    ongoingStrokes.forEach((stroke, key) => {
+      if (key.startsWith(socket.id)) {
+        ongoingStrokes.delete(key);
+      }
+    });
   });
 
   // Disconnect
   socket.on('disconnect', () => {
-    console.log(`[Disconnect] ${socket.id} disconnected`);
+    console.log(`[Disconnect] ❌ ${socket.id} disconnected`);
+    
+    // Clean up ongoing strokes
+    ongoingStrokes.forEach((stroke, key) => {
+      if (key.startsWith(socket.id)) {
+        ongoingStrokes.delete(key);
+      }
+    });
     
     const result = roomManager.removeUser(socket.id);
     if (result.success) {
@@ -157,11 +248,14 @@ io.on('connection', (socket) => {
 // Start server
 server.listen(PORT, () => {
   console.log(`
-
-                                                       
- Port: ${PORT}                                        
- URL: http://localhost:${PORT}                       
- Stats: http://localhost:${PORT}/api/stats          
- Server is ready!                                   
+╔════════════════════════════════════════════════════════╗
+║  🎨 Collaborative Canvas Server                        ║
+║                                                        ║
+║  📡 Port: ${PORT}                                        ║
+║  🌐 URL: http://localhost:${PORT}                       ║
+║  📊 Stats: http://localhost:${PORT}/api/stats          ║
+║                                                        ║
+║  ✅ Server is ready!                                   ║
+╚════════════════════════════════════════════════════════╝
   `);
 });

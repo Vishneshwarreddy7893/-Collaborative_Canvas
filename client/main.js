@@ -1,4 +1,6 @@
-
+/**
+ * Main Application - FIXED UNDO/REDO
+ */
 
 console.log('[Main] Main.js loaded');
 
@@ -18,7 +20,6 @@ class CollaborativeCanvasApp {
   init() {
     console.log('[Main] Init called');
     
-    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setup());
     } else {
@@ -34,7 +35,6 @@ class CollaborativeCanvasApp {
     this.setupKeyboardShortcuts();
     this.startPerformanceMonitoring();
     
-    // Show modal after a delay
     setTimeout(() => this.showJoinModal(), 500);
   }
 
@@ -47,20 +47,18 @@ class CollaborativeCanvasApp {
     const roomIdInput = document.getElementById('roomId');
     
     if (!modal || !joinBtn) {
-      console.error('[Main]  Modal elements not found!');
+      console.error('[Main] ❌ Modal elements not found!');
       return;
     }
     
     console.log('[Main] Modal elements found');
     modal.classList.remove('hidden');
     
-    // SINGLE EVENT LISTENER - This is the fix!
     joinBtn.onclick = () => {
       console.log('[Main] 🔘 JOIN BUTTON CLICKED!');
       this.handleJoinRoom(userNameInput.value.trim(), roomIdInput.value.trim(), modal, joinBtn);
     };
     
-    // Enter key handlers
     userNameInput.onkeypress = (e) => {
       if (e.key === 'Enter') {
         console.log('[Main] Enter in name field');
@@ -91,7 +89,6 @@ class CollaborativeCanvasApp {
     console.log('[Main] Calling wsClient.connect()');
     window.wsClient.connect();
     
-    // Wait for connection
     let connected = false;
     const timeout = setTimeout(() => {
       if (!connected) {
@@ -123,7 +120,6 @@ class CollaborativeCanvasApp {
       }
     });
     
-    // If already connected
     if (window.wsClient.isConnected) {
       console.log('[Main] Already connected, joining immediately');
       connected = true;
@@ -169,10 +165,12 @@ class CollaborativeCanvasApp {
     });
     
     document.getElementById('undoBtn').addEventListener('click', () => {
+      console.log('[Main] Undo button clicked');
       window.wsClient.undo();
     });
     
     document.getElementById('redoBtn').addEventListener('click', () => {
+      console.log('[Main] Redo button clicked');
       window.wsClient.redo();
     });
     
@@ -194,51 +192,100 @@ class CollaborativeCanvasApp {
   setupWebSocketCallbacks() {
     console.log('[Main] Setting up WebSocket callbacks');
     
+    // Initial canvas state when joining
     window.wsClient.on('initCanvas', (data) => {
       console.log('[Main] 📊 initCanvas callback:', data);
-      this.operations = data.operations;
-      this.currentOperationIndex = data.operations.length - 1;
-      window.canvasManager.replayOperations(data.operations);
-      window.canvasManager.setOperationCount(data.operations.length);
-      data.users.forEach(user => this.addUser(user.id, user));
+      this.operations = data.operations || [];
+      this.currentOperationIndex = this.operations.length - 1;
+      window.canvasManager.replayOperations(this.operations);
+      window.canvasManager.setOperationCount(this.operations.length);
+      if (data.users) {
+        data.users.forEach(user => this.addUser(user.id, user));
+      }
+      this.updateUndoRedoButtons();
     });
     
+    // Drawing from other users
     window.wsClient.on('draw', (data) => {
-      if (data.userId === window.wsClient.userId) return;
+      console.log('[Main] Draw event received:', data);
+      
+      // Don't draw your own strokes again (already drawn locally)
+      if (data.userId === window.wsClient.userId) {
+        console.log('[Main] Skipping own drawing');
+        return;
+      }
+      
+      // Draw the stroke
       window.canvasManager.drawStroke(data);
+      
+      // Add to operations array
       this.operations.push(data);
       this.currentOperationIndex++;
+      
       window.canvasManager.setOperationCount(this.operations.length);
+      this.updateUndoRedoButtons();
     });
     
+    // FIXED: Undo should work for ALL users
     window.wsClient.on('undo', (data) => {
+      console.log('[Main] ✅ UNDO event received for ALL users:', data);
+      
+      // Update the current index
       this.currentOperationIndex = data.newIndex;
+      
+      // Get operations up to the new index
       const currentOps = this.operations.slice(0, this.currentOperationIndex + 1);
+      
+      console.log('[Main] Replaying operations after undo. Count:', currentOps.length);
+      
+      // Replay all operations
       window.canvasManager.replayOperations(currentOps);
       window.canvasManager.setOperationCount(currentOps.length);
+      
+      this.updateUndoRedoButtons();
     });
     
+    // FIXED: Redo should work for ALL users
     window.wsClient.on('redo', (data) => {
+      console.log('[Main] ✅ REDO event received for ALL users:', data);
+      
+      // Update the current index
       this.currentOperationIndex = data.newIndex;
+      
+      // Get operations up to the new index
       const currentOps = this.operations.slice(0, this.currentOperationIndex + 1);
+      
+      console.log('[Main] Replaying operations after redo. Count:', currentOps.length);
+      
+      // Replay all operations
       window.canvasManager.replayOperations(currentOps);
       window.canvasManager.setOperationCount(currentOps.length);
+      
+      this.updateUndoRedoButtons();
     });
     
+    // Clear canvas
     window.wsClient.on('clearCanvas', () => {
+      console.log('[Main] Clear canvas event');
       this.operations = [];
       this.currentOperationIndex = -1;
       window.canvasManager.clearCanvas();
+      this.updateUndoRedoButtons();
     });
     
+    // User joined
     window.wsClient.on('userJoined', (data) => {
+      console.log('[Main] User joined:', data);
       this.addUser(data.id, data);
     });
     
+    // User left
     window.wsClient.on('userLeft', (data) => {
+      console.log('[Main] User left:', data);
       this.removeUser(data.userId);
     });
     
+    // Cursor movement
     window.wsClient.on('cursorMove', (data) => {
       const user = this.users.get(data.userId);
       if (user) {
@@ -247,14 +294,42 @@ class CollaborativeCanvasApp {
     });
   }
 
+  // NEW: Update undo/redo button states
+  updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    
+    // Enable undo if we have operations to undo
+    if (this.currentOperationIndex >= 0) {
+      undoBtn.disabled = false;
+      undoBtn.style.opacity = '1';
+    } else {
+      undoBtn.disabled = true;
+      undoBtn.style.opacity = '0.5';
+    }
+    
+    // Enable redo if we have operations ahead of current index
+    if (this.currentOperationIndex < this.operations.length - 1) {
+      redoBtn.disabled = false;
+      redoBtn.style.opacity = '1';
+    } else {
+      redoBtn.disabled = true;
+      redoBtn.style.opacity = '0.5';
+    }
+    
+    console.log('[Main] Button states - Undo:', !undoBtn.disabled, 'Redo:', !redoBtn.disabled);
+  }
+
   setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
+        console.log('[Main] Keyboard shortcut: Undo');
         window.wsClient.undo();
       }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
         e.preventDefault();
+        console.log('[Main] Keyboard shortcut: Redo');
         window.wsClient.redo();
       }
       if (e.key === 'b' || e.key === 'B') this.selectTool('brush');
@@ -312,7 +387,6 @@ class CollaborativeCanvasApp {
   }
 }
 
-// Create app instance
 console.log('[Main] Creating app instance...');
 window.app = new CollaborativeCanvasApp();
 console.log('[Main] App instance created');
